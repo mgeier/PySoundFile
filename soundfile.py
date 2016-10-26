@@ -140,6 +140,24 @@ typedef struct SF_FORMAT_INFO
     const char* name ;
     const char* extension ;
 } SF_FORMAT_INFO ;
+
+struct SF_CHUNK_INFO
+{   char        id [64] ;
+    unsigned    id_size ;
+    unsigned    datalen ;
+    void        *data ;
+} ;
+typedef struct SF_CHUNK_INFO SF_CHUNK_INFO ;
+int sf_set_chunk (SNDFILE * sndfile, const SF_CHUNK_INFO * chunk_info) ;
+typedef struct SF_CHUNK_ITERATOR SF_CHUNK_ITERATOR ;
+SF_CHUNK_ITERATOR *
+sf_get_chunk_iterator (SNDFILE * sndfile, const SF_CHUNK_INFO * chunk_info) ;
+SF_CHUNK_ITERATOR *
+sf_next_chunk_iterator (SF_CHUNK_ITERATOR * iterator) ;
+int
+sf_get_chunk_size (const SF_CHUNK_ITERATOR * it, SF_CHUNK_INFO * chunk_info) ;
+int
+sf_get_chunk_data (const SF_CHUNK_ITERATOR * it, SF_CHUNK_INFO * chunk_info) ;
 """)
 
 if _sys.platform == 'win32':
@@ -1228,6 +1246,58 @@ class SoundFile(object):
             err = _snd.sf_close(self._file)
             self._file = None
             _error_check(err)
+
+    def set_chunk(self, something):
+        """
+        or add_chunk()?
+        or append_chunk()?
+        """
+
+    def chunks(self, identifier=None):
+        """Return a generator yielding low-level RIFF chunks.
+
+        Parameters
+        ----------
+        identifier : str or bytes, optional
+            Only chunks matching the given 4-character chunk identifier
+            are returned.
+            If not specified, the generator will yield all available
+            chunks and provide their respective identifiers.
+
+        Yields
+        ------
+        buffer or (bytes, buffer)
+            If *identifier* was specified, a buffer object with the raw
+            chunk data.  If not, a tuple containing the chunk identifier
+            and said buffer object.
+           
+            .. note:: The buffer is only valid until the next iteration!
+
+        """
+        # TODO: re-use for set_chunk()
+        if not hasattr(_snd, 'sf_set_chunk'):
+            raise RuntimeError('Error: chunk API ... >= 1.0.26')
+        info = _ffi.new("SF_CHUNK_INFO*")
+        if not identifier:
+            chunk_iter = _snd.sf_get_chunk_iterator(self._file, _ffi.NULL)
+        else:
+            if isinstance(identifier, _unicode):
+                identifier = identifier.encode()
+            info.id = identifier
+            info.id_size = len(identifier)
+            chunk_iter = _snd.sf_get_chunk_iterator(self._file, info)
+        while chunk_iter:
+            _error_check(_snd.sf_get_chunk_size(chunk_iter, info))
+            # CFFI object is kept alive until the next iteration:
+            chunk_data = _ffi.new("char[]", info.datalen)
+            info.data = chunk_data
+            _error_check(_snd.sf_get_chunk_data(chunk_iter, info))
+            buffer = _ffi.buffer(info.data, info.datalen)
+            if identifier:
+                yield buffer
+            else:
+                yield _ffi.string(info.id, info.id_size), buffer
+            chunk_iter = _snd.sf_next_chunk_iterator(chunk_iter)
 
     def _open(self, file, mode_int, closefd):
         """Call the appropriate sf_open*() function from libsndfile."""
