@@ -1282,6 +1282,11 @@ class SoundFile(object):
         """Initialize callback functions for sf_open_virtual()."""
         @_ffi.callback("sf_vio_get_filelen")
         def vio_get_filelen(user_data):
+            try:
+                if not file.seekable():
+                    return -1
+            except (AttributeError, TypeError):
+                pass
             curr = file.tell()
             file.seek(0, SEEK_END)
             size = file.tell()
@@ -1290,6 +1295,11 @@ class SoundFile(object):
 
         @_ffi.callback("sf_vio_seek")
         def vio_seek(offset, whence, user_data):
+            try:
+                if not file.seekable():
+                    return -1
+            except (AttributeError, TypeError):
+                pass
             file.seek(offset, whence)
             return file.tell()
 
@@ -1318,6 +1328,11 @@ class SoundFile(object):
 
         @_ffi.callback("sf_vio_tell")
         def vio_tell(user_data):
+            try:
+                if not file.seekable():
+                    return -1
+            except (AttributeError, TypeError):
+                pass
             return file.tell()
 
         # Note: the callback functions must be kept alive!
