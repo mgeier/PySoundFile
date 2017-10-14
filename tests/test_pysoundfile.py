@@ -729,6 +729,27 @@ def test_read_into_out_over_end_with_fill_should_return_full_data_and_write_into
     assert out.shape == (4, sf_stereo_r.channels)
 
 
+def test_read_into_out_with_frames_and_fill_value(sf_stereo_r):
+    out = np.ones((8, sf_stereo_r.channels), dtype='float64')
+    data = sf_stereo_r.read(3, out=out, fill_value=0)
+    assert len(data) == 3
+    assert np.all(data == data_stereo[:3])
+    assert np.all(data == out[:3])
+    assert data.base is out
+    assert np.all(out[3:] == 1)
+
+
+def test_read_into_out_over_end_with_frames_and_fill_value(sf_stereo_r):
+    out = np.ones((8, sf_stereo_r.channels), dtype='float64')
+    data = sf_stereo_r.read(6, out=out, fill_value=0)
+    assert len(data) == 6
+    assert np.all(out[:4] == data_stereo)
+    assert np.all(out[4:6] == 0)
+    assert np.all(out[6:8] == 1)
+    assert np.all(data == out[:6])
+    assert data.base is out
+
+
 # -----------------------------------------------------------------------------
 # Test buffer read
 # -----------------------------------------------------------------------------

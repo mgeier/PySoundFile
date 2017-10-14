@@ -211,10 +211,10 @@ def read(file, frames=-1, start=0, stop=None, dtype='float64', always_2d=False,
         array anyway.
 
         If `out` was specified, it is returned.  If `out` has more
-        frames than available in the file (or if `frames` is smaller
-        than the length of `out`) and no `fill_value` is given, then
-        only a part of `out` is overwritten and a view containing all
-        valid frames is returned.
+        frames than available in the file and no `fill_value` is given,
+        or if `frames` is smaller than the length of `out`, then only a
+        part of `out` is overwritten and a view containing all valid
+        frames is returned.
     samplerate : int
         The sample rate of the audio file.
 
@@ -806,12 +806,11 @@ class SoundFile(object):
             one-dimensional array is returned. Use ``always_2d=True``
             to return a two-dimensional array anyway.
 
-            If `out` was specified, it is returned. If `out` has more
-            frames than available in the file (or if `frames` is
-            smaller than the length of `out`) and no `fill_value` is
-            given, then only a part of `out` is overwritten and a view
-            containing all valid frames is returned. numpy.ndarray or
-            type(out)
+            If `out` was specified, it is returned.  If `out` has more
+            frames than available in the file and no `fill_value` is
+            given, or if `frames` is smaller than the length of `out`,
+            then only a part of `out` is overwritten and a view
+            containing all valid frames is returned.
 
         Other Parameters
         ----------------
