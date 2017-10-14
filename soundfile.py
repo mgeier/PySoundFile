@@ -853,9 +853,8 @@ class SoundFile(object):
         if out is None:
             frames = self._check_frames(frames, fill_value)
             out = self._create_empty_array(frames, always_2d, dtype)
-        else:
-            if frames < 0 or frames > len(out):
-                frames = len(out)
+        elif frames < 0 or frames > len(out):
+            frames = len(out)
         frames = self._array_io('read', out, frames)
         if len(out) > frames:
             if fill_value is None:
