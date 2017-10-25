@@ -849,17 +849,26 @@ class SoundFile(object):
         buffer_read, .write
 
         """
-        if out is None:
-            frames = self._check_frames(frames, fill_value)
-            out = self._create_empty_array(frames, always_2d, dtype)
-        elif frames < 0 or frames > len(out):
+        explicit_frames = frames >= 0
+        if out is not None and (frames < 0 or frames > len(out)):
             frames = len(out)
-        frames = self._array_io('read', out, frames)
-        if len(out) > frames:
+        max_frames = self._check_frames(frames, fill_value)
+        # TODO: non-seekable!
+        if out is None:
+            out = self._create_empty_array(max_frames, always_2d, dtype)
+        read_frames = self._array_io('read', out, max_frames)
+        if read_frames < max_frames:
             if fill_value is None:
-                out = out[:frames]
+                # NB: This can only happen in non-seekable files
+                assert not self.seekable()
+                out = out[:read_frames]
             else:
-                out[frames:] = fill_value
+                out[read_frames:max_frames] = fill_value
+        if max_frames < len(out):
+            if explicit_frames:
+                out = out[:max_frames]
+            else:
+                out[max_frames:] = fill_value
         return out
 
     def buffer_read(self, frames=-1, dtype=None):
