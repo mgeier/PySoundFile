@@ -853,7 +853,6 @@ class SoundFile(object):
         if out is not None and (frames < 0 or frames > len(out)):
             frames = len(out)
         max_frames = self._check_frames(frames, fill_value)
-        # TODO: non-seekable!
         if out is None:
             out = self._create_empty_array(max_frames, always_2d, dtype)
         read_frames = self._array_io('read', out, max_frames)
@@ -865,7 +864,7 @@ class SoundFile(object):
             else:
                 out[read_frames:max_frames] = fill_value
         if max_frames < len(out):
-            if explicit_frames:
+            if explicit_frames or fill_value is None:
                 out = out[:max_frames]
             else:
                 out[max_frames:] = fill_value
