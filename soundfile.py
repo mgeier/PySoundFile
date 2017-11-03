@@ -1064,12 +1064,19 @@ class SoundFile(object):
         if 'r' not in self.mode and '+' not in self.mode:
             raise RuntimeError("blocks() is not allowed in write-only mode")
 
+        explicit_frames = frames >= 0
         frames = self._check_frames(frames, fill_value=None)
         buffer = self._create_empty_array(blocksize, always_2d, dtype)
         read_target = buffer
         while frames > 0:
-            read_result = self.read(frames, fill_value=fill_value,
-                                    out=read_target)
+            if explicit_frames and frames <= len(read_target):
+                read_result = self.read(frames, fill_value=fill_value, out=read_target)
+                # TODO: out_frames = ...
+            else:
+                read_result = self.read(fill_value=fill_value, out=read_target)
+                # TODO: out_frames = ...
+            #read_result = self.read(frames, fill_value=fill_value,
+            #                        out=read_target)
             out_frames = blocksize - len(read_target) + len(read_result)
             yield buffer[:out_frames].copy(order='K')
             frames -= len(read_result)
@@ -1306,10 +1313,11 @@ class SoundFile(object):
         if frames >= 0 and stop is not None:
             raise TypeError("Only one of {frames, stop} may be used")
 
+        no_frames_but_stop = frames < 0 and stop is not None
         start, stop, _ = slice(start, stop).indices(self.frames)
         if stop < start:
             stop = start
-        if frames < 0:
+        if no_frames_but_stop:
             frames = stop - start
         if self.seekable():
             self.seek(start, SEEK_SET)
